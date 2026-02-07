@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#166534">
+    <title>EmoL'scape - Greenscape Designz Happiness Index™</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "lucide-react": "https://esm.sh/lucide-react@0.300.0"
+        }
+    }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=Merriweather:ital,wght@0,400;0,700;0,900;1,400&display=swap');
+        
+        * { -webkit-tap-highlight-color: transparent; }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f0fdf4;
+            overscroll-behavior: none;
+            -webkit-font-smoothing: antialiased;
+        }
+        .font-serif { font-family: 'Merriweather', serif; }
+        
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #c7c7c7; border-radius: 4px; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        .animate-slide-up { animation: slideUp 0.3s ease-out forwards; }
+        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+
+        .prose-sm p { margin-bottom: 0.75em; }
+        .prose-sm ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 0.75em; }
+        .prose-sm strong { font-weight: 700; color: #166534; }
+        .prose-sm h3 { font-weight: 800; color: #064e3b; margin-top: 1em; margin-bottom: 0.5em; }
+        .prose-sm table { width: 100%; border-collapse: collapse; margin-bottom: 1em; font-size: 0.9em; }
+        .prose-sm th, .prose-sm td { border: 1px solid #e5e7eb; padding: 0.5rem; text-align: left; }
+        .prose-sm th { background-color: #f0fdf4; color: #166534; }
+        
+        /* Mobile optimizations */
+        @supports (-webkit-touch-callout: none) {
+            body { padding-bottom: env(safe-area-inset-bottom); }
+        }
+        
+        input, textarea, button { 
+            font-size: 16px !important; /* Prevents iOS zoom */
+        }
+        
+        @media print {
+            .no-print { display: none!important; }
+            body { background-color: white; }
+        }
+    </style>
+</head>
+<body>
+    <div id="root" class="min-h-screen">
+        <div class="flex items-center justify-center min-h-screen">
+            <div class="text-center text-green-800 p-4">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+                <p class="font-bold">Loading EmoL'scape™...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useMemo, useRef } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { 
+            Leaf, Wind, Bird, Footprints, Heart, Users, Shield, Droplets, 
+            Info, ChevronDown, ChevronUp, Download, RotateCcw, Target, 
+            Share2, Mail, Printer, Thermometer, Eye, Activity, Ruler, 
+            Sparkles, MessageSquare, X, Bot, Flower2, Send, Copy, 
+            Lock, User, Phone, AtSign, LogIn, Menu, Home
+        } from 'lucide-react';
+
+        // API endpoint
+        const API_ENDPOINT = '/api/gemini';
+        const REGISTER_ENDPOINT = '/api/register';
+
+        // Secure API call
+        const callGemini = async (prompt, systemInstruction) => {
+            try {
+                const response = await fetch(API_ENDPOINT, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt, systemInstruction })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    if (response.status === 429) {
+                        return "⚠️ Too many requests. Please wait a moment.";
+                    }
+                    return errorData.error || "Sorry, an error occurred.";
+                }
+
+                const data = await response.json();
+                return data.response || "No response generated.";
+            } catch (error) {
+                console.error("API Error:", error);
+                return "Connection error. Please check your internet.";
+            }
+        };
+
+        // GDHI DATA STRUCTURES
+        const GDHI_PILLARS = [
+            { 
+                id: 'SR', name: 'Sensory Richness', hex: '#ef4444', icon: <Eye />, 
+                desc: 'Engagement through color, texture, sound, and scent.',
+                subs: [
+                    { name: 'Color Palette', desc: 'Visual variety & harmony.', ranges: ['Monochromatic', 'Limited', 'Harmonious', 'Masterpiece'] },
+                    { name: 'Texture', desc: 'Tactile diversity.', ranges: ['Flat', 'Basic', 'Rich', 'Symphony'] },
+                    { name: 'Acoustic', desc: 'Natural sounds vs noise.', ranges: ['Noisy', 'Neutral', 'Natural', 'Sanctuary'] },
+                    { name: 'Seasonality', desc: 'Year-round interest.', ranges: ['Static', '2-Season', '4-Season', 'Ever-Changing'] }
+                ] 
+            },
+            { 
+                id: 'MC', name: 'Microclimate Comfort', hex: '#3b82f6', icon: <Thermometer />, 
+                desc: 'Thermal comfort, shade, airflow.',
+                subs: [
+                    { name: 'Shade', desc: 'Canopy/Structures.', ranges: ['Exposed', 'Partial', 'Effective', 'Optimal'] },
+                    { name: 'Airflow', desc: 'Breeze flow.', ranges: ['Stagnant', 'Inconsistent', 'Natural', 'Perfect Flow'] },
+                    { name: 'Heat Island', desc: 'Cool materials.', ranges: ['Hot', 'Standard', 'Reflective', 'Zero Heat'] },
+                    { name: 'Human Comfort', desc: 'Thermal safety.', ranges: ['Stress', 'Tolerable', 'Comfort', 'Utopia'] }
+                ] 
+            },
+            { 
+                id: 'BC', name: 'Biodiversity', hex: '#10b981', icon: <Bird />, 
+                desc: 'Ecological richness & habitat.',
+                subs: [
+                    { name: 'Native Spp', desc: 'Indigenous plants.', ranges: ['Exotic', 'Mixed', 'Mostly Native', '100% Native'] },
+                    { name: 'Habitat Layers', desc: 'Nesting/feeding.', ranges: ['Sterile', 'Basic', 'Complex', 'Thriving'] },
+                    { name: 'Pollinators', desc: 'Bee/butterfly support.', ranges: ['None', 'Occasional', 'Friendly', 'Haven'] },
+                    { name: 'Bio-filtration', desc: 'Water cleansing.', ranges: ['Runoff', 'Basic', 'Managed', 'Zero Discharge'] }
+                ] 
+            },
+            { 
+                id: 'MF', name: 'Movement Flow', hex: '#8b5cf6', icon: <Footprints />, 
+                desc: 'Circulation & accessibility.',
+                subs: [
+                    { name: 'Intuitive', desc: 'Logical paths.', ranges: ['Maze', 'Signage Needed', 'Clear', 'Intuitive'] },
+                    { name: 'Access', desc: 'Universal (ADA).', ranges: ['Barriers', 'Basic', 'Accessible', 'Inclusive'] },
+                    { name: 'Desire Lines', desc: 'Path adherence.', ranges: ['Chaos', 'Worn Paths', 'Effective', 'Seamless'] },
+                    { name: 'Zoning', desc: 'Activity separation.', ranges: ['Conflict', 'Mixed', 'Defined', 'Harmonious'] }
+                ] 
+            },
+            { 
+                id: 'RV', name: 'Restorative Value', hex: '#20c997', icon: <Heart />, 
+                desc: 'Stress reduction & calm.',
+                subs: [
+                    { name: 'Tranquility', desc: 'Visual calm.', ranges: ['Chaotic', 'Average', 'Serene', 'Meditative'] },
+                    { name: 'Refuge', desc: 'Private spaces.', ranges: ['Exposed', 'Semi-Private', 'Safe', 'Sanctuary'] },
+                    { name: 'Immersion', desc: 'Nature dosing.', ranges: ['Urban', 'Garden', 'Immersive', 'Deep Nature'] },
+                    { name: 'Sound Masking', desc: 'White noise.', ranges: ['Traffic', 'Audible', 'Masked', 'Nature Only'] }
+                ] 
+            },
+            { 
+                id: 'SC', name: 'Social Cohesion', hex: '#f97316', icon: <Users />, 
+                desc: 'Interaction & gathering.',
+                subs: [
+                    { name: 'Gathering', desc: 'Group spaces.', ranges: ['Isolation', 'Small Groups', 'Hub', 'Magnet'] },
+                    { name: 'Flexibility', desc: 'Adaptable seating.', ranges: ['Rigid', 'Semi-Fixed', 'Adaptable', 'Configurable'] },
+                    { name: 'Play Value', desc: 'Recreation.', ranges: ['Boring', 'Standard', 'Engaging', 'World-Class'] },
+                    { name: 'Intergenerational', desc: 'All-ages.', ranges: ['Segregated', 'Dual', 'Multi-Age', 'Inclusive'] }
+                ] 
+            },
+            { 
+                id: 'ES', name: 'Emotional Safety', hex: '#ec4899', icon: <Shield />, 
+                desc: 'CPTED & Security.',
+                subs: [
+                    { name: 'Visibility', desc: 'Sightlines.', ranges: ['Blind Spots', 'Obstructed', 'Clear', 'Total View'] },
+                    { name: 'Lighting', desc: 'Night safety.', ranges: ['Dark', 'Uneven', 'Warm', 'Perfect'] },
+                    { name: 'Perception', desc: 'Feeling safe.', ranges: ['Fearful', 'Cautious', 'Secure', 'Welcoming'] },
+                    { name: 'Enclosure', desc: 'Boundaries.', ranges: ['Leaky', 'Porous', 'Defined', 'Safe'] }
+                ] 
+            },
+            { 
+                id: 'ER', name: 'Eco Resilience', hex: '#4f46e5', icon: <Leaf />, 
+                desc: 'Water, soil & longevity.',
+                subs: [
+                    { name: 'Soil', desc: 'Health/Permeability.', ranges: ['Dead', 'Modified', 'Healthy', 'Living Sponge'] },
+                    { name: 'Stormwater', desc: 'SuDS/Drainage.', ranges: ['Flooding', 'Piped', 'Managed', 'Total Capture'] },
+                    { name: 'Drought', desc: 'Water-wise.', ranges: ['High Use', 'Moderate', 'Water Wise', 'Xeric'] },
+                    { name: 'Maintenance', desc: 'Viability.', ranges: ['Fragile', 'Standard', 'Low Input', 'Robust'] }
+                ] 
+            }
+        ];
+
+        const SCORE_TIERS = [
+            { name: 'Platinum', min: 9.0, color: '#ccfbf1', border: '#14b8a6', text: '#0f766e' },
+            { name: 'Gold', min: 7.5, color: '#fef3c7', border: '#f59e0b', text: '#b45309' },
+            { name: 'Silver', min: 5.0, color: '#f3f4f6', border: '#9ca3af', text: '#374151' },
+            { name: 'Needs Improvement', min: 0.0, color: '#fee2e2', border: '#ef4444', text: '#b91c1c' }
+        ];
+
+        // REGISTRATION MODAL
+        const RegistrationModal = ({ onComplete }) => {
+            const [formData, setFormData] = useState({ name: '', email: '', mobile: '' });
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setError('');
+                setLoading(true);
+
+                try {
+                    const response = await fetch(REGISTER_ENDPOINT, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+
+                    const data = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(data.error || 'Registration failed');
+                    }
+
+                    // Store registration data
+                    localStorage.setItem('gdhi_user', JSON.stringify(data.data));
+                    onComplete(data.data);
+                } catch (err) {
+                    setError(err.message);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-gradient-to-br from-green-900 via-emerald-800 to-green-900 flex items-center justify-center p-4 z-50">
+                    <div className="bg-white rounded-3xl max-w-md w-full p-6 md:p-8 shadow-2xl animate-fade-in">
+                        <div className="text-center mb-6">
+                            <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                                <Leaf className="w-8 h-8 text-green-600"/>
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">EmoL'scape™</h1>
+                            <p className="text-sm text-gray-600">Greenscape Designz Happiness Index</p>
+                        </div>
+
+                        <div className="bg-green-50 border-l-4 border-green-600 p-4 mb-6 rounded">
+                            <p className="text-sm text-green-800">
+                                <strong className="block mb-1">🔒 Secure Registration Required</strong>
+                                To access the GDHI audit tool, please provide your details. Your information is securely stored.
+                            </p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    <User className="w-4 h-4 inline mr-2"/>Full Name *
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.name}
+                                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                                    placeholder="Enter your full name"
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    <AtSign className="w-4 h-4 inline mr-2"/>Email Address *
+                                </label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                    placeholder="your.email@example.com"
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    <Phone className="w-4 h-4 inline mr-2"/>Mobile Number *
+                                </label>
+                                <input
+                                    type="tel"
+                                    required
+                                    pattern="[0-9]{10}"
+                                    value={formData.mobile}
+                                    onChange={(e) => setFormData({...formData, mobile: e.target.value.replace(/[^0-9]/g, '')})}
+                                    placeholder="10-digit mobile number"
+                                    maxLength="10"
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none"
+                                />
+                            </div>
+
+                            {error && (
+                                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                    {error}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-lg font-bold hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {loading ? (
+                                    <>
+                                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                                        <span>Registering...</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <LogIn className="w-5 h-5"/>
+                                        <span>Access GDHI Tool</span>
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        <p className="text-xs text-gray-500 text-center mt-4">
+                            By registering, you agree to our terms of service and privacy policy.
+                        </p>
+                    </div>
+                </div>
+            );
+        };
+
+        // CHATBOT MODAL
+        const ChatbotModal = ({ onClose, projectData, results }) => {
+            const [messages, setMessages] = useState([
+                { role: 'bot', text: "Hello! I'm EmoL, your AI Landscape Consultant. How can I assist you today?" }
+            ]);
+            const [input, setInput] = useState('');
+            const [loading, setLoading] = useState(false);
+            const messagesEndRef = useRef(null);
+
+            useEffect(() => {
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }, [messages]);
+
+            const handleSend = async () => {
+                if (!input.trim() || loading) return;
+
+                const userMessage = input.trim();
+                setMessages(prev => [...prev, { role: 'user', text: userMessage }]);
+                setInput('');
+                setLoading(true);
+
+                const context = `
+Project: ${projectData.siteName || 'Not specified'}
+Location: ${projectData.location || 'Not specified'}
+Overall Score: ${results.overall.toFixed(1)}
+Tier: ${results.tier.name}
+
+Pillar Scores:
+${GDHI_PILLARS.map(p => `${p.name}: ${results.pillarAvgs[p.id].toFixed(1)}`).join('\n')}
+
+User Question: ${userMessage}
+                `;
+
+                const systemInstruction = "You are EmoL, an expert AI Landscape Consultant for the Greenscape Designz Happiness Index. Provide helpful, actionable advice. Be concise and professional.";
+
+                const response = await callGemini(context, systemInstruction);
+                setMessages(prev => [...prev, { role: 'bot', text: response }]);
+                setLoading(false);
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
+                    <div className="bg-white w-full md:max-w-2xl h-[90vh] md:h-[80vh] md:rounded-2xl flex flex-col shadow-2xl animate-slide-up">
+                        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 flex justify-between items-center md:rounded-t-2xl flex-shrink-0">
+                            <div className="flex items-center gap-3">
+                                <Bot className="w-6 h-6"/>
+                                <div>
+                                    <h2 className="font-bold text-lg">EmoL AI Assistant</h2>
+                                    <p className="text-xs opacity-90">Landscape Consultant</p>
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition">
+                                <X className="w-5 h-5"/>
+                            </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
+                            {messages.map((msg, idx) => (
+                                <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[85%] p-3 rounded-2xl text-sm ${
+                                        msg.role === 'user' 
+                                            ? 'bg-purple-600 text-white rounded-br-none' 
+                                            : 'bg-white border border-gray-200 text-gray-800 rounded-bl-none shadow-sm'
+                                    }`}>
+                                        {msg.role === 'bot' && <Bot className="w-4 h-4 mb-1 text-purple-600"/>}
+                                        <div dangerouslySetInnerHTML={{ __html: msg.text.replace(/\n/g, '<br/>') }} />
+                                    </div>
+                                </div>
+                            ))}
+                            {loading && (
+                                <div className="flex justify-start">
+                                    <div className="bg-white border border-gray-200 rounded-2xl p-3">
+                                        <div className="flex gap-1">
+                                            <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{animationDelay: '0s'}}></div>
+                                            <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                                            <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        <div className="p-4 border-t border-gray-200 bg-white md:rounded-b-2xl flex-shrink-0">
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                                    placeholder="Ask EmoL anything..."
+                                    disabled={loading}
+                                    className="flex-1 p-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none"
+                                />
+                                <button
+                                    onClick={handleSend}
+                                    disabled={loading || !input.trim()}
+                                    className="px-4 py-3 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <Send className="w-5 h-5"/>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // AI CONSULTANT MODAL (Multi-tab)
+        const AIConsultantModal = ({ onClose, projectData, results, userData }) => {
+            const [activeTab, setActiveTab] = useState('roadmap');
+            const [loading, setLoading] = useState(false);
+            const [responses, setResponses] = useState({
+                roadmap: null,
+                plants: null,
+                email: null
+            });
+
+            const generateContent = async (type) => {
+                if (responses[type]) return; // Already generated
+                
+                setLoading(true);
+                let prompt = '';
+                let systemInstruction = '';
+
+                if (type === 'roadmap') {
+                    const lowestPillars = Object.entries(results.pillarAvgs)
+                        .sort(([,a], [,b]) => a - b)
+                        .slice(0, 3)
+                        .map(([id]) => GDHI_PILLARS.find(p => p.id === id)?.name);
+                    
+                    prompt = `Create "EmoL's GDHI Renovation Roadmap" for ${projectData.siteName} (${projectData.location}). 
+                    
+Overall Score: ${results.overall.toFixed(1)} (${results.tier.name})
+Lowest performing pillars: ${lowestPillars.join(', ')}
+
+Provide 3 actionable design interventions for EACH of the lowest pillars. Be specific, practical, and professional. Use markdown formatting with clear headings and bullet points.`;
+                    
+                    systemInstruction = "You are EmoL, an expert Landscape Architect specializing in GDHI audits and landscape renovations.";
+                    
+                } else if (type === 'plants') {
+                    prompt = `Generate a biodiversity-focused plant palette for ${projectData.location}.
+
+Context:
+- Biodiversity score: ${results.pillarAvgs['BC']?.toFixed(1) || 'N/A'}
+- Sensory Richness score: ${results.pillarAvgs['SR']?.toFixed(1) || 'N/A'}
+
+Suggest region-appropriate native plants that enhance these scores:
+- 5 Trees (with height, spread, ecological benefits)
+- 5 Shrubs (flowering season, pollinator value)
+- 5 Groundcovers/Perennials (sensory qualities)
+
+Format as a detailed table with columns: Plant Name | Type | Key Benefits | Maintenance Level`;
+                    
+                    systemInstruction = "You are an expert Horticulturalist and Ecologist specializing in native plants and biodiversity enhancement.";
+                    
+                } else if (type === 'email') {
+                    prompt = `Draft a professional email to stakeholders about the GDHI audit results.
+
+Project: ${projectData.siteName}
+Location: ${projectData.location}
+Score: ${results.overall.toFixed(1)} (${results.tier.name})
+Audited by: ${projectData.auditor || 'Greenscape Designz Team'}
+
+Create a persuasive email that:
+1. Summarizes key audit findings (strengths and weaknesses)
+2. Highlights the importance of the GDHI score
+3. Proposes a meeting to discuss the Renovation Roadmap
+4. Maintains a professional, enthusiastic tone
+
+IMPORTANT: End with this exact signature:
+We look forward to your prompt response.
+
+Sincerely,
+Anirban Pal
+Landscape Architect
+Greenscape Designz
+anirban.pal@greenscapedesignz.in
++91 88613 17426
+
+Keep under 250 words, professional tone.`;
+                    
+                    systemInstruction = "You are Anirban Pal from Greenscape Designz, drafting client communications.";
+                }
+
+                const response = await callGemini(prompt, systemInstruction);
+                setResponses(prev => ({ ...prev, [type]: response }));
+                setLoading(false);
+            };
+
+            useEffect(() => {
+                generateContent(activeTab);
+            }, [activeTab]);
+
+            const copyToClipboard = (text) => {
+                navigator.clipboard.writeText(text);
+                alert('Copied to clipboard!');
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
+                    <div className="bg-white w-full md:max-w-4xl h-[90vh] md:h-[85vh] md:rounded-2xl flex flex-col shadow-2xl animate-slide-up">
+                        <div className="bg-gradient-to-r from-green-700 to-emerald-700 text-white p-4 flex justify-between items-center md:rounded-t-2xl flex-shrink-0">
+                            <div className="flex items-center gap-3">
+                                <Sparkles className="w-6 h-6"/>
+                                <h2 className="font-bold text-lg">AI Consultant</h2>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition">
+                                <X className="w-5 h-5"/>
+                            </button>
+                        </div>
+
+                        <div className="flex border-b border-gray-200 overflow-x-auto flex-shrink-0">
+                            {[
+                                { id: 'roadmap', label: 'Roadmap', icon: <Target className="w-4 h-4"/> },
+                                { id: 'plants', label: 'Plants', icon: <Flower2 className="w-4 h-4"/> },
+                                { id: 'email', label: 'Email', icon: <Mail className="w-4 h-4"/> }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`flex-1 py-3 px-4 font-bold text-sm flex items-center justify-center gap-2 transition-colors ${
+                                        activeTab === tab.id 
+                                            ? 'border-b-4 border-green-600 text-green-800 bg-green-50' 
+                                            : 'text-gray-500 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    {tab.icon} {tab.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+                            {loading && (
+                                <div className="flex flex-col items-center justify-center h-full text-green-800">
+                                    <Sparkles className="w-12 h-12 mb-4 animate-spin text-green-600"/>
+                                    <p className="font-bold">EmoL is thinking...</p>
+                                </div>
+                            )}
+
+                            {!loading && responses[activeTab] && (
+                                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                                    <div 
+                                        className="prose-sm text-gray-700"
+                                        dangerouslySetInnerHTML={{ 
+                                            __html: responses[activeTab]
+                                                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                                .replace(/\n/g, '<br/>')
+                                        }} 
+                                    />
+                                    
+                                    <div className="flex gap-2 mt-6 pt-4 border-t border-gray-200">
+                                        <button
+                                            onClick={() => copyToClipboard(responses[activeTab])}
+                                            className="px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition flex items-center gap-2"
+                                        >
+                                            <Copy className="w-4 h-4"/> Copy
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                setResponses(prev => ({ ...prev, [activeTab]: null }));
+                                                generateContent(activeTab);
+                                            }}
+                                            className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition flex items-center gap-2"
+                                        >
+                                            <RotateCcw className="w-4 h-4"/> Regenerate
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // SLIDER COMPONENT
+        const Slider = ({ sub, val, onChange }) => {
+            const getColor = (s) => {
+                if (s <= 3) return 'bg-red-500';
+                if (s <= 6) return 'bg-yellow-400';
+                if (s < 9) return 'bg-green-500';
+                return 'bg-emerald-600';
+            };
+
+            const getLabel = (s) => {
+                if (s <= 3) return sub.ranges[0];
+                if (s <= 6) return sub.ranges[1];
+                if (s < 9) return sub.ranges[2];
+                return sub.ranges[3];
+            };
+
+            return (
+                <div className="mb-6">
+                    <div className="flex justify-between items-end mb-2">
+                        <div className="flex-1">
+                            <div className="font-bold text-gray-800 text-sm">{sub.name}</div>
+                            <div className="text-xs text-gray-500">{sub.desc}</div>
+                        </div>
+                        <div className="text-2xl font-black text-gray-800 tabular-nums ml-2">{val.toFixed(1)}</div>
+                    </div>
+                    
+                    <div className="relative h-3 bg-gray-200 rounded-full mb-2">
+                        <div 
+                            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-300 ${getColor(val)}`} 
+                            style={{ width: `${val * 10}%` }}
+                        ></div>
+                        <input 
+                            type="range" 
+                            min="0" 
+                            max="10" 
+                            step="0.1" 
+                            value={val} 
+                            onChange={(e) => onChange(parseFloat(e.target.value))} 
+                            className="absolute top-[-5px] left-0 w-full h-6 opacity-0 cursor-pointer" 
+                        />
+                    </div>
+                    
+                    <div className="flex justify-between text-[10px] uppercase font-bold">
+                        <span className="text-gray-400">0</span>
+                        <span className="text-gray-700">{getLabel(val)}</span>
+                        <span className="text-gray-400">10</span>
+                    </div>
+                </div>
+            );
+        };
+
+        // CERTIFICATE MODAL
+        const CertificateModal = ({ data, results, onClose }) => {
+            const handlePrint = () => window.print();
+
+            return (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 no-print" onClick={onClose}>
+                    <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl" onClick={e => e.stopPropagation()}>
+                        <div className="bg-gradient-to-r from-green-700 to-emerald-700 text-white p-4 rounded-t-2xl flex justify-between items-center">
+                            <h2 className="font-bold text-lg">GDHI Certificate</h2>
+                            <div className="flex gap-2">
+                                <button onClick={handlePrint} className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition">
+                                    <Printer className="w-5 h-5"/>
+                                </button>
+                                <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-lg transition">
+                                    <X className="w-5 h-5"/>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="p-8 bg-gradient-to-br from-green-50 via-white to-emerald-50">
+                            <div className="bg-white rounded-xl border-4 border-green-600 p-8">
+                                <div className="text-center mb-6">
+                                    <Leaf className="w-20 h-20 mx-auto mb-4 text-green-600"/>
+                                    <h1 className="text-3xl font-black text-green-900 mb-2">GREENSCAPE DESIGNZ</h1>
+                                    <h2 className="text-2xl font-bold text-green-700">Happiness Index™ Certificate</h2>
+                                    <div className="inline-block px-6 py-3 rounded-full text-white text-2xl font-black mt-4" style={{ backgroundColor: results.tier.border }}>
+                                        {results.overall.toFixed(1)} - {results.tier.name}
+                                    </div>
+                                </div>
+
+                                <div className="text-center mb-6">
+                                    <p className="text-lg text-gray-700 mb-4 italic">This certifies that</p>
+                                    <h3 className="text-3xl font-black text-gray-900 mb-2">{data.siteName}</h3>
+                                    <div className="text-sm text-gray-600 space-y-1">
+                                        {data.location && <div>📍 {data.location}</div>}
+                                        {data.projectType && <div>🏢 {data.projectType}</div>}
+                                        {data.siteSize && <div>📐 {data.siteSize}</div>}
+                                        {data.auditor && <div>👤 Audited by: {data.auditor}</div>}
+                                        <div>📅 {new Date().toLocaleDateString()}</div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                                    {GDHI_PILLARS.map(p => (
+                                        <div key={p.id} className="border border-gray-200 p-3 rounded-lg bg-gray-50">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                {React.cloneElement(p.icon, { className: "w-4 h-4", style: { color: p.hex } })}
+                                                <span className="text-[10px] font-bold uppercase text-gray-600">{p.name}</span>
+                                            </div>
+                                            <div className="text-2xl font-black" style={{ color: p.hex }}>
+                                                {results.pillarAvgs[p.id].toFixed(1)}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="text-center border-t border-gray-200 pt-4">
+                                    <p className="text-sm text-gray-600">
+                                        Contact Greenscape Designz for improvement recommendations
+                                    </p>
+                                    <p className="text-xs text-gray-400 mt-2">
+                                        anirban.pal@greenscapedesignz.in | +91 88613 17426
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // MAIN APP
+        const App = () => {
+            const [isRegistered, setIsRegistered] = useState(false);
+            const [userData, setUserData] = useState(null);
+            const [scores, setScores] = useState(() => {
+                const init = {};
+                GDHI_PILLARS.forEach(p => p.subs.forEach(s => init[`${p.id}_${s.name}`] = 5.0));
+                return init;
+            });
+            const [projectData, setProjectData] = useState({ 
+                siteName: '', location: '', auditor: '', projectType: '', siteSize: '', nps: null 
+            });
+            const [showChatbot, setShowChatbot] = useState(false);
+            const [showAI, setShowAI] = useState(false);
+            const [showCert, setShowCert] = useState(false);
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+            useEffect(() => {
+                const stored = localStorage.getItem('gdhi_user');
+                if (stored) {
+                    setUserData(JSON.parse(stored));
+                    setIsRegistered(true);
+                }
+            }, []);
+
+            const handleRegistrationComplete = (data) => {
+                setUserData(data);
+                setIsRegistered(true);
+            };
+
+            const results = useMemo(() => {
+                const pillarAvgs = {};
+                GDHI_PILLARS.forEach(p => {
+                    const vals = p.subs.map(sub => scores[`${p.id}_${sub.name}`]);
+                    pillarAvgs[p.id] = vals.reduce((a, b) => a + b, 0) / vals.length;
+                });
+                const overall = Object.values(pillarAvgs).reduce((a, b) => a + b, 0) / GDHI_PILLARS.length;
+                const tier = SCORE_TIERS.find(t => overall >= t.min) || SCORE_TIERS[3];
+                return { pillarAvgs, overall, tier };
+            }, [scores]);
+
+            const updateScore = (key, val) => setScores(prev => ({...prev, [key]: val }));
+
+            const handleShare = (platform) => {
+                const text = `I audited ${projectData.siteName || 'a landscape'} using EmoL'scape GDHI Tool!\n\nScore: ${results.overall.toFixed(1)}/10 (${results.tier.name})`;
+                if (platform === 'whatsapp') {
+                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                } else {
+                    window.open(`mailto:?subject=GDHI Audit&body=${encodeURIComponent(text)}`, '_blank');
+                }
+            };
+
+            if (!isRegistered) {
+                return <RegistrationModal onComplete={handleRegistrationComplete} />;
+            }
+
+            return (
+                <div className="min-h-screen bg-gray-50 pb-20 md:pb-8">
+                    {/* Mobile Header */}
+                    <div className="sticky top-0 z-40 bg-white border-b border-gray-200 md:hidden">
+                        <div className="flex items-center justify-between p-4">
+                            <div className="flex items-center gap-3">
+                                <Leaf className="w-8 h-8 text-green-600"/>
+                                <div>
+                                    <h1 className="font-bold text-sm">EmoL'scape™</h1>
+                                    <p className="text-xs text-gray-500">GDHI Audit</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="p-2 hover:bg-gray-100 rounded-lg"
+                            >
+                                <Menu className="w-6 h-6"/>
+                            </button>
+                        </div>
+
+                        {mobileMenuOpen && (
+                            <div className="border-t border-gray-200 p-2 space-y-1 animate-fade-in">
+                                <button onClick={() => handleShare('whatsapp')} className="w-full flex items-center gap-2 p-3 hover:bg-gray-50 rounded-lg text-sm font-medium">
+                                    <Share2 className="w-4 h-4"/> Share via WhatsApp
+                                </button>
+                                <button onClick={() => handleShare('email')} className="w-full flex items-center gap-2 p-3 hover:bg-gray-50 rounded-lg text-sm font-medium">
+                                    <Mail className="w-4 h-4"/> Share via Email
+                                </button>
+                                <button onClick={() => window.location.reload()} className="w-full flex items-center gap-2 p-3 hover:bg-gray-50 rounded-lg text-sm font-medium text-red-600">
+                                    <RotateCcw className="w-4 h-4"/> Reset Audit
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Desktop Header */}
+                    <div className="hidden md:block bg-white border-b border-gray-200">
+                        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <Leaf className="w-10 h-10 text-green-600"/>
+                                <div>
+                                    <h1 className="text-2xl font-black text-gray-900">EmoL'scape™</h1>
+                                    <p className="text-sm text-gray-500">Greenscape Designz Happiness Index</p>
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => handleShare('whatsapp')} className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold text-sm">
+                                    <Share2 className="w-4 h-4"/> WhatsApp
+                                </button>
+                                <button onClick={() => handleShare('email')} className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 font-bold text-sm">
+                                    <Mail className="w-4 h-4"/> Email
+                                </button>
+                                <button onClick={() => window.location.reload()} className="p-2 text-gray-400 hover:text-red-500 rounded-lg">
+                                    <RotateCcw className="w-5 h-5"/>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto px-4 md:px-6 py-4 md:py-8">
+                        {/* Dashboard */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+                            <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                                <div>
+                                    <div className="text-xs font-bold text-gray-400 uppercase mb-1">Current Score</div>
+                                    <div className="flex items-baseline gap-2">
+                                        <span className="text-4xl font-black text-gray-900">{results.overall.toFixed(1)}</span>
+                                        <span className="text-sm font-bold px-3 py-1 rounded-full" style={{ backgroundColor: results.tier.color, color: results.tier.text }}>
+                                            {results.tier.name}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 w-full md:w-auto">
+                                    <button
+                                        onClick={() => setShowChatbot(true)}
+                                        className="px-4 py-3 bg-purple-600 text-white rounded-lg font-bold hover:bg-purple-700 flex items-center justify-center gap-2"
+                                    >
+                                        <Bot className="w-4 h-4"/> Chat
+                                    </button>
+                                    <button
+                                        onClick={() => setShowAI(true)}
+                                        className="px-4 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 flex items-center justify-center gap-2 animate-pulse-slow"
+                                    >
+                                        <Sparkles className="w-4 h-4"/> AI
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if(!projectData.siteName) {
+                                                alert('Please enter Site Name first');
+                                            } else {
+                                                setShowCert(true);
+                                            }
+                                        }}
+                                        className="col-span-2 px-4 py-3 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700 flex items-center justify-center gap-2"
+                                    >
+                                        <Download className="w-4 h-4"/> Certificate
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Project Details */}
+                        <div className="bg-white p-4 md:p-6 rounded-xl border border-gray-100 mb-6 shadow-sm">
+                            <h3 className="font-bold text-gray-800 mb-4 flex items-center">
+                                <Target className="w-5 h-5 mr-2 text-green-600"/> Project Details
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <input
+                                    type="text"
+                                    placeholder="Site Name (Required) *"
+                                    value={projectData.siteName}
+                                    onChange={(e) => setProjectData({...projectData, siteName: e.target.value})}
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Location"
+                                    value={projectData.location}
+                                    onChange={(e) => setProjectData({...projectData, location: e.target.value})}
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Project Type"
+                                    value={projectData.projectType}
+                                    onChange={(e) => setProjectData({...projectData, projectType: e.target.value})}
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Site Size"
+                                    value={projectData.siteSize}
+                                    onChange={(e) => setProjectData({...projectData, siteSize: e.target.value})}
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Audited By"
+                                    value={projectData.auditor}
+                                    onChange={(e) => setProjectData({...projectData, auditor: e.target.value})}
+                                    className="w-full p-3 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none md:col-span-2"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Pillars */}
+                        <div className="space-y-6">
+                            {GDHI_PILLARS.map(p => (
+                                <div key={p.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                    <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gradient-to-r from-gray-50 to-white">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full flex items-center justify-center text-white" style={{ backgroundColor: p.hex }}>
+                                                {React.cloneElement(p.icon, { className: "w-5 h-5" })}
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-gray-900">{p.name}</h3>
+                                                <p className="text-xs text-gray-500 hidden md:block">{p.desc}</p>
+                                            </div>
+                                        </div>
+                                        <span className="text-2xl font-black text-gray-800">{results.pillarAvgs[p.id].toFixed(1)}</span>
+                                    </div>
+                                    <div className="p-4 md:p-6 space-y-6">
+                                        {p.subs.map(sub => (
+                                            <Slider
+                                                key={sub.name}
+                                                sub={sub}
+                                                val={scores[`${p.id}_${sub.name}`]}
+                                                onChange={(v) => updateScore(`${p.id}_${sub.name}`, v)}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* NPS */}
+                        <div className="mt-8 bg-white p-6 md:p-8 rounded-2xl shadow-sm border border-gray-200 text-center">
+                            <Heart className="w-8 h-8 mx-auto mb-3 text-blue-600"/>
+                            <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2">Net Promoter Score</h3>
+                            <p className="text-sm text-gray-500 mb-4 italic">"How likely are you to recommend this tool?"</p>
+                            <div className="flex justify-center gap-2 flex-wrap">
+                                {[0,1,2,3,4,5,6,7,8,9,10].map(val => (
+                                    <button
+                                        key={val}
+                                        onClick={() => setProjectData(prev => ({...prev, nps: val}))}
+                                        className={`w-10 h-10 rounded-full font-bold text-sm transition-all ${
+                                            projectData.nps === val ? 'scale-110 shadow-lg ring-2 ring-offset-2' : 'hover:bg-gray-100 text-gray-400'
+                                        }`}
+                                        style={{
+                                            backgroundColor: projectData.nps === val ? (val >= 9 ? '#22c55e' : val >= 7 ? '#eab308' : '#ef4444') : undefined,
+                                            color: projectData.nps === val ? 'white' : undefined
+                                        }}
+                                    >
+                                        {val}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Floating Chat Button (Mobile) */}
+                    <button
+                        onClick={() => setShowChatbot(true)}
+                        className="md:hidden fixed bottom-20 right-4 w-14 h-14 bg-purple-600 text-white rounded-full shadow-lg flex items-center justify-center z-30 hover:bg-purple-700 transition animate-pulse-slow"
+                    >
+                        <Bot className="w-6 h-6"/>
+                    </button>
+
+                    {/* Modals */}
+                    {showChatbot && <ChatbotModal onClose={() => setShowChatbot(false)} projectData={projectData} results={results} />}
+                    {showAI && <AIConsultantModal onClose={() => setShowAI(false)} projectData={projectData} results={results} userData={userData} />}
+                    {showCert && <CertificateModal data={projectData} results={results} onClose={() => setShowCert(false)} />}
+                </div>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
