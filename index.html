@@ -68,7 +68,7 @@
             Leaf, Wind, Bird, Footprints, Heart, Users, Shield, Droplets, 
             BarChart3, Info, ChevronDown, ChevronUp, Save, Download, 
             RotateCcw, Target, Settings, Share2, Mail, Printer,
-            Thermometer, Mic, Eye, Activity, Ruler, Zap, PenTool, Sparkles, MessageSquare, X, Bot, Flower2, Send, Copy
+            Thermometer, Mic, Eye, Activity, Ruler, Zap, PenTool, Sparkles, MessageSquare, X, Bot, Flower2, Send, Copy, Edit3, Building, MapPin, User
         } from 'lucide-react';
 
         // --- GEMINI API CONFIG ---
@@ -288,6 +288,65 @@
                             </div>
                         </div>
                     )}
+                </div>
+            );
+        };
+
+        const ProjectSettingsModal = ({ data, setData, onClose }) => {
+            return (
+                <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-white w-full max-w-lg rounded-xl shadow-2xl overflow-hidden animate-fade-in">
+                        <div className="bg-green-900 text-white p-4 flex justify-between items-center">
+                            <h2 className="text-lg font-bold flex items-center"><Edit3 className="w-5 h-5 mr-2"/> Project Details</h2>
+                            <button onClick={onClose} className="p-1 hover:bg-green-800 rounded-full"><X className="w-5 h-5"/></button>
+                        </div>
+                        <div className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Project Name</label>
+                                <input type="text" className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none" 
+                                    value={data.siteName} onChange={e => setData({...data, siteName: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Location</label>
+                                <div className="relative">
+                                    <MapPin className="absolute left-2 top-2.5 w-4 h-4 text-gray-400"/>
+                                    <input type="text" className="w-full pl-8 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                                        value={data.location} onChange={e => setData({...data, location: e.target.value})} placeholder="e.g. Bangalore, KA" />
+                                </div>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Project Type</label>
+                                    <div className="relative">
+                                        <Building className="absolute left-2 top-2.5 w-4 h-4 text-gray-400"/>
+                                        <select className="w-full pl-8 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none bg-white"
+                                            value={data.projectType} onChange={e => setData({...data, projectType: e.target.value})}>
+                                            <option value="">Select...</option>
+                                            <option value="Residential">Residential</option>
+                                            <option value="Commercial">Commercial</option>
+                                            <option value="Public Park">Public Park</option>
+                                            <option value="Hospitality">Hospitality</option>
+                                            <option value="Campus">Campus</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Site Size</label>
+                                    <input type="text" className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                                        value={data.siteSize} onChange={e => setData({...data, siteSize: e.target.value})} placeholder="e.g. 5 Acres" />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Auditor Name</label>
+                                <div className="relative">
+                                    <User className="absolute left-2 top-2.5 w-4 h-4 text-gray-400"/>
+                                    <input type="text" className="w-full pl-8 p-2 border border-gray-300 rounded focus:ring-2 focus:ring-green-500 outline-none" 
+                                        value={data.auditor} onChange={e => setData({...data, auditor: e.target.value})} placeholder="Your Name" />
+                                </div>
+                            </div>
+                            <button onClick={onClose} className="w-full mt-4 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition">Save Details</button>
+                        </div>
+                    </div>
                 </div>
             );
         };
@@ -629,11 +688,13 @@
                 return init;
             });
             const [projectData, setProjectData] = useState({ 
-                siteName: '', location: '', auditor: '', projectType: '', siteSize: '',
+                siteName: 'My Landscape Project',
+                location: '', auditor: '', projectType: '', siteSize: '',
                 date: new Date().toLocaleDateString(), nps: null 
             });
             const [showCert, setShowCert] = useState(false);
             const [showAI, setShowAI] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
 
             // Calculations
             const results = useMemo(() => {
@@ -673,8 +734,9 @@
                             </div>
                         </div>
                         <div className="flex gap-2">
-                            <button onClick={handleWhatsapp} className="flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-full hover:bg-green-200 font-bold text-sm transition"><Share2 className="w-4 h-4 mr-2"/> WhatsApp</button>
-                            <button onClick={handleEmail} className="flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 font-bold text-sm transition"><Mail className="w-4 h-4 mr-2"/> Email</button>
+                             <button onClick={() => setShowSettings(true)} className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-sm transition shadow-sm"><Edit3 className="w-4 h-4 mr-2"/> Edit Project Details</button>
+                            <button onClick={handleWhatsapp} className="flex items-center px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 font-bold text-sm transition"><Share2 className="w-4 h-4 mr-2"/> WhatsApp</button>
+                            <button onClick={handleEmail} className="flex items-center px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 font-bold text-sm transition"><Mail className="w-4 h-4 mr-2"/> Email</button>
                             <button onClick={() => window.location.reload()} className="p-2 text-gray-400 hover:text-red-500 rounded-full"><RotateCcw className="w-5 h-5"/></button>
                         </div>
                     </div>
@@ -686,7 +748,10 @@
                     <div className="sticky top-2 z-40 bg-white/90 backdrop-blur-md shadow-lg rounded-2xl p-4 mb-8 border border-green-100 transition-all duration-300 no-print">
                         <div className="flex justify-between items-center">
                             <div>
-                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Current Progress (Base: 0)</div>
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-2">
+                                    Current Progress 
+                                    {projectData.siteName !== 'My Landscape Project' && <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded text-[9px]">{projectData.siteName}</span>}
+                                </div>
                                 <div className="flex items-baseline gap-2">
                                     <span className="text-4xl font-black text-gray-900">{results.overall.toFixed(1)}</span>
                                     <span className="text-sm font-bold px-3 py-1 rounded-full uppercase" style={{ backgroundColor: results.tier.color, color: results.tier.text }}>{results.tier.name}</span>
@@ -706,24 +771,12 @@
                                     <Sparkles className="w-4 h-4 mr-2" /> AI Consultant
                                 </button>
                                 <button 
-                                    onClick={() => { if(!projectData.siteName) alert('Please enter a Site Name first.'); else setShowCert(true); }}
-                                    className={`px-6 py-3 rounded-xl font-bold text-white shadow-md flex items-center transition ${!projectData.siteName ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-700 hover:bg-green-800'}`}
+                                    onClick={() => setShowCert(true)}
+                                    className={`px-6 py-3 rounded-xl font-bold text-white shadow-md flex items-center transition bg-green-700 hover:bg-green-800`}
                                 >
                                     <Download className="w-4 h-4 mr-2" /> Generate Certificate
                                 </button>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Input Form */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-100 mb-8 no-print shadow-sm">
-                        <h3 className="font-bold text-gray-800 mb-4 flex items-center"><Target className="w-5 h-5 mr-2 text-green-600"/> Project Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <input type="text" placeholder="Site Name (Required)" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none md:col-span-2 lg:col-span-1" value={projectData.siteName} onChange={e => setProjectData({...projectData, siteName: e.target.value})} />
-                            <input type="text" placeholder="Location" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={projectData.location} onChange={e => setProjectData({...projectData, location: e.target.value})} />
-                            <input type="text" placeholder="Project Type (e.g., Residential)" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={projectData.projectType} onChange={e => setProjectData({...projectData, projectType: e.target.value})} />
-                            <input type="text" placeholder="Site Size (e.g., 5 Acres)" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={projectData.siteSize} onChange={e => setProjectData({...projectData, siteSize: e.target.value})} />
-                            <input type="text" placeholder="Audited by" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={projectData.auditor} onChange={e => setProjectData({...projectData, auditor: e.target.value})} />
                         </div>
                     </div>
 
@@ -774,6 +827,7 @@
                         </div>
                     </div>
 
+                    {showSettings && <ProjectSettingsModal data={projectData} setData={setProjectData} onClose={() => setShowSettings(false)} />}
                     {showAI && <AIConsultantModal onClose={() => setShowAI(false)} projectData={projectData} results={results} scores={scores} />}
                     {showCert && <CertificateModal data={projectData} results={results} pillars={GDHI_PILLARS} onClose={() => setShowCert(false)} />}
                 </div>
