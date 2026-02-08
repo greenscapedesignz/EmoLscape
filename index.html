@@ -629,7 +629,8 @@
                 return init;
             });
             const [projectData, setProjectData] = useState({ 
-                siteName: '', location: '', auditor: '', projectType: '', siteSize: '',
+                siteName: 'My Landscape Project', // Defaulted to prevent errors
+                location: '', auditor: '', projectType: '', siteSize: '',
                 date: new Date().toLocaleDateString(), nps: null 
             });
             const [showCert, setShowCert] = useState(false);
@@ -706,24 +707,12 @@
                                     <Sparkles className="w-4 h-4 mr-2" /> AI Consultant
                                 </button>
                                 <button 
-                                    onClick={() => { if(!projectData.siteName) alert('Please enter a Site Name first.'); else setShowCert(true); }}
-                                    className={`px-6 py-3 rounded-xl font-bold text-white shadow-md flex items-center transition ${!projectData.siteName ? 'bg-gray-300 cursor-not-allowed' : 'bg-green-700 hover:bg-green-800'}`}
+                                    onClick={() => setShowCert(true)}
+                                    className={`px-6 py-3 rounded-xl font-bold text-white shadow-md flex items-center transition bg-green-700 hover:bg-green-800`}
                                 >
                                     <Download className="w-4 h-4 mr-2" /> Generate Certificate
                                 </button>
                             </div>
-                        </div>
-                    </div>
-
-                    {/* Input Form */}
-                    <div className="bg-white p-6 rounded-xl border border-gray-100 mb-8 no-print shadow-sm">
-                        <h3 className="font-bold text-gray-800 mb-4 flex items-center"><Target className="w-5 h-5 mr-2 text-green-600"/> Project Details</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <input type="text" placeholder="Site Name (Required)" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none md:col-span-2 lg:col-span-1" value={projectData.siteName} onChange={e => setProjectData({...projectData, siteName: e.target.value})} />
-                            <input type="text" placeholder="Location" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={projectData.location} onChange={e => setProjectData({...projectData, location: e.target.value})} />
-                            <input type="text" placeholder="Project Type (e.g., Residential)" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={projectData.projectType} onChange={e => setProjectData({...projectData, projectType: e.target.value})} />
-                            <input type="text" placeholder="Site Size (e.g., 5 Acres)" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={projectData.siteSize} onChange={e => setProjectData({...projectData, siteSize: e.target.value})} />
-                            <input type="text" placeholder="Audited by" className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" value={projectData.auditor} onChange={e => setProjectData({...projectData, auditor: e.target.value})} />
                         </div>
                     </div>
 
